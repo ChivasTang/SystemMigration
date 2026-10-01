@@ -9,7 +9,6 @@
 #   停止:      docker compose down
 #
 # 需要 Docker Compose v2.17 以上 (使用了 dockerfile_inline)
-
 services:
   rhel8:
     image: registry.access.redhat.com/ubi8/ubi-init:8.10
@@ -24,4 +23,11 @@ services:
       - /run
     ports:
       - "2222:22"
+    healthcheck:
+      # systemd の起動が完了しているか (multi-user.target に到達したか) を確認
+      test: ["CMD", "systemctl", "is-active", "--quiet", "multi-user.target"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
