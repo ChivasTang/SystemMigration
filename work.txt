@@ -8,3 +8,11 @@ systemctl enable --now sshd
 passwd root
 
 192.168.1.110:2222 /ssh2 /auth=password /user=root /passwd=root
+
+
+C:\workspace\SystemMigration\instructions.txtファイルの内容を参照し、下記プロジェクトのpromptを修正ください。私は、下記のPromptでAPサーバ構築手順書_old.xlsxファイルの構造や書き方などを理解したいです。
+※ファイルを修正しないで、内容を直接出力すること。
+prompt:
+１．下記ファイルを参照できますか？sheet一覧を出力ください。
+C:\workspace\SystemMigration\AP\APサーバ構築手順書_old.xlsx
+２．読み取れる場合、ファイルの内容をよく理解し、具体的に何を話したか、なんの構造ですか？など詳しく説明ください。または、md形式のレポートを出力ください。
