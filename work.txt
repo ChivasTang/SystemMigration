@@ -1,0 +1,10 @@
+
+
+docker compose up -d
+docker exec -it rhel8 bash
+
+dnf -y install openssh-server
+systemctl enable --now sshd
+passwd root
+
+192.168.1.110:2222 /ssh2 /auth=password /user=root /passwd=root
