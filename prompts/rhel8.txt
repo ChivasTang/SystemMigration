@@ -1,0 +1,57 @@
+registry.access.redhat.com/ubi8/ubi-init:8.10 を使って、RHEL 8.10 相当のサーバを起動したいです。
+docker-compose.yml を提供してください。
+
+要件:
+- イメージは公式の registry.access.redhat.com/ubi8/ubi-init:8.10 をそのまま使う(Dockerfile や独自イメージは作らない)。
+- 外部(ホストOS)から SSH で接続できること。
+  - ホストの 2222 番ポートをコンテナの 22 番ポートに割り当てる。
+- 接続確認コマンド(ssh -p 2222 root@localhost)も併せて提示する。
+- 注意点(UBI は systemd が使えない、検証用途限定のセキュリティ上の注意)を簡潔に添える。
+- rootのパスワードをrootに設定、外部接続可能にする。
+- sshdをインストールし、自動起動にする。
+
+
+
+cat > /etc/yum.repos.d/almalinux8-appstream.repo <<'EOF'
+[almalinux8-appstream]
+name=AlmaLinux 8 - AppStream
+baseurl=https://repo.almalinux.org/almalinux/8/AppStream/$basearch/os/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-8
+priority=100
+EOF
+
+# 登録されているリポジトリの一覧
+dnf repolist
+
+# 特定のリポジトリの詳細(URL、パッケージ数、includepkgs の設定など)
+dnf repoinfo almalinux8-appstream
+
+# リポジトリにある tcsh のバージョンを一覧表示
+dnf list --showduplicates tcsh
+
+# tcsh の詳細(バージョン、サイズ、提供元リポジトリ)
+dnf info tcsh
+
+# 定義ファイルの中身を確認
+cat /etc/yum.repos.d/almalinux8-appstream.repo
+
+getent passwd     # ユーザー一覧
+getent group      # グループ一覧
+id sshd
+dnf install -y squid
+
+dnf info mod_ssl
+dnf install -y
+
+
+
+dnf info httpd
+dnf install -y httpd
+dnf install -y mod_ssl
+sudo mkdir -p /usr/local/apache/bin
+sudo mkdir -p /usr/local/apache/logs
+sudo ln -s /usr/sbin/apachectl /usr/local/apache/bin/apachectl
+httpd -v
+

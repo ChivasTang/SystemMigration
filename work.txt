@@ -67,30 +67,39 @@ AP サーバー（RHEL 8.10）の構築手順書を、構築項目ごとに同�
 
 
 
-対象サーバ名
-対象ソフトウェア
-対象OS
-対象環境
-バージョン
-
-
-  実施日／実施者
 
 
 
+registry.access.redhat.com/ubi8/ubi:8.10 を使って、RHEL 8.10 相当のサーバを起動したいです。
+docker-compose.yml を提供してください。
 
-
-
-
-
-
-
-
-
+要件:
+- イメージは公式の ubi8/ubi:8.10 をそのまま使う(Dockerfile や独自イメージは作らない)。
+- 外部(ホストOS)から SSH で接続できること。
+  - ホストの 2222 番ポートをコンテナの 22 番ポートに割り当てる。
+  - 起動後のopenssh-server の導入、ホストキー生成(ssh-keygen -A)、
+    root パスワードの設定、sshd のフォアグラウンド起動(/usr/sbin/sshd -D)のコマンド集を別途で提供すること。
+  - 外部からsshで接続する形で接続する。
+- root ログインとパスワード認証は許可する(検証用途)。
+- コンテナ名は rhel8、restart は unless-stopped とする。
+- 接続確認コマンド(ssh -p 2222 root@localhost)も併せて提示する。
+- 注意点(UBI は systemd が使えない、検証用途限定のセキュリティ上の注意)を簡潔に添える。
 
 
 
 
+RHEL8.10向けに提供されているのtschのrepoの確認
 
+dnf install -y https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/Packages/tcsh-6.20.00-15.el8.x86_64.rpm
+
+# 確認
+tcsh -c 'echo $version'
+
+
+dnf -q repoquery --repofrompath=alma8,https://repo.almalinux.org/almalinux/8/AppStream/x86_64/os/ --repo=alma8 --showduplicates tcsh
+
+
+C:\workspace\SystemMigration\AP配下の環境定義書(icwaq01w).xlsxのOSユーザ一覧シートには、ユーザ・グループの定義情報を書いてあります。
+これによって、C:\workspace\SystemMigration\sheets\APサーバ構築手順書_ユーザ・グループ.xlsxを再度作成ください。ver2として
 
 

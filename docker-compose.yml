@@ -1,33 +1,15 @@
-# 本地模拟 AWS EC2 实验环境
-#   实例名:   ec2-instance
-#   实例类型: m6i.2xlarge (x86_64 / 8 vCPU / 32 GiB)
-#   操作系统: RHEL 8.10
-#
-#   启动:      docker compose up -d --build
-#   本机登录:  docker compose exec -u ec2-user ec2-instance bash -l
-#   SSH 登录:  <这台电脑的IP>:2222  用户名 ec2-user / 密码 ec2-user
-#   停止:      docker compose down
-#
-# 需要 Docker Compose v2.17 以上 (使用了 dockerfile_inline)
 services:
   rhel8:
     image: registry.access.redhat.com/ubi8/ubi-init:8.10
     container_name: rhel8
     hostname: ec2-hostname
-    platform: linux/amd64
-    cpus: 2
-    mem_limit: 4g
+    restart: unless-stopped
     privileged: true
-    cgroup: host
-    tmpfs:
-      - /run
     ports:
       - "2222:22"
-    healthcheck:
-      # systemd の起動が完了しているか (multi-user.target に到達したか) を確認
-      test: ["CMD", "systemctl", "is-active", "--quiet", "multi-user.target"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-    restart: unless-stopped
+    command: >
+      bash -c "set -e;
+      rpm -q openssh-server || { dnf install -y openssh-server; systemctl enable sshd; };
+      sed -i -E 's/^#?PermitRootLogin .*/PermitRootLogin yes/; s/^#?PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config;
+      echo root:root | chpasswd;
+      exec /sbin/init"
