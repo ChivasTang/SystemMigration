@@ -42,10 +42,22 @@ getent group      # グループ一覧
 id sshd
 dnf install -y squid
 
+dnf info httpd
 dnf info mod_ssl
+dnf info openssl
+dnf info vsftpd
 dnf install -y
+dnf info openssl
+dnf info openssl-libs
+rpm -q openssl
+dnf info vsftpd
+dnf info awscli
+yum remove awscli
+dnf install -y ftp
 
-
+dnf info perl
+dnf info perl-DBI
+dnf info hulft
 
 dnf info httpd
 dnf install -y httpd
@@ -54,4 +66,14 @@ sudo mkdir -p /usr/local/apache/bin
 sudo mkdir -p /usr/local/apache/logs
 sudo ln -s /usr/sbin/apachectl /usr/local/apache/bin/apachectl
 httpd -v
+mod_ssl -v
+rpm -q unzip less groff-base gnupg2
+dnf remove -y unzip less groff-base gnupg2
+
+for p in unzip less groff-base gnupg2; do rpm -q $p || dnf install -y $p; done; rpm -q unzip less groff-base gnupg2
+
+for p in awscli unzip less groff-base; do rpm -q $p || dnf remove -y $p; done; for p in awscli unzip less groff-base; do if ! command -v aws >/dev/null 2>&1; then echo "$p removed!"; fi; done;
+
+
+
 
