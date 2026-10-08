@@ -213,6 +213,52 @@ dnf install -y glibc-langpack-ja
 
 
 
+ln -s /usr/lib/jvm/java-1.8.0-amazon-corretto/ /usr/local/jdk
+
+RHEL8.10のAPサーバには、各種のアプリが動作しています。
+APサーバではOracleClientをインストールする必要がありますか？
+
+sudo dnf install -y libaio
+sudo dnf install -y libnsl
+sudo dnf install -y ./oracle-instantclient19.32-basic-19.32.0.0.0-1.el8.x86_64.rpm \
+                    ./oracle-instantclient19.32-sqlplus-19.32.0.0.0-1.el8.x86_64.rpm
+rpm -q libaio
+rpm -q libnsl
+
+dnf install -y oracle-instantclient19.32-basic-19.32.0.0.0-1.el8.x86_64.rpm
+dnf install -y oracle-instantclient19.32-sqlplus-19.32.0.0.0-1.el8.x86_64.rpm
+
+
+tomcat 9.0.122をRHEL8.10でインストールする。
+
+
+apache-tomcat-9.0.122.tar.gzをインストール
+tar zxvf apache-tomcat-9.0.122.tar.gz
+sudo mv apache-tomcat-9.0.122 /usr/local/
+cd /usr/local
+sudo ln -s apache-tomcat-9.0.122 tomcat
+/usr/local/tomcat/bin/version.sh
+chown -R tomcat:oinstall /usr/local/apache-tomcat-9.0.122
+javaはAmazon Corretto 8を使用する。
+javaはインストール済みで、java -versionで確認できる。
+tomcat 9.0.122のrpmをダウンロードして,
+/tmpに格納されています。
+
+
+
+AsteriaをRHEL8.10にインストールする。
+C:\workspace\Asteria\ASTERIA Warp for Linuxのinstall-asteriawarp-linux.binを利用する。
+シリアルNo.LAS-ST-1234-567-9876
+C:\workspace\Asteria\製品ドキュメント（日本語）配下のInstallGuide.pdfはインストール手順の参考にする。
+
+
+
+C:\workspace\SystemMigration配下のAPサーバ構築手順書_QA_tsy110.xlsx
+のユーザ・グループシートに基づいて、新しいエクセルファイルを作成する。
+ユーザ・グループシートのみでいいです。
+eaiadm	400	asteria	400	/home/eaiadm	/bin/bash
+hulft	800	hulft	800	/home/hulft	/bin/bash
+ファイル名は、APサーバ構築手順書_ユーザ・グループ_ver4.xlsx
 
 
 
@@ -220,14 +266,69 @@ dnf install -y glibc-langpack-ja
 
 
 
+useradd -u 400  -g asteria  -d /home/eaiadm   -m -s /bin/bash eaiadm
+useradd -u 800  -g hulft    -d /home/hulft    -m -s /bin/bash hulft
+
+
+
+ls -ld /home/eaiadm　/home/cpbackup /home/tomcat /home/hulft　/home/cm_usr /home/pfusr /home/ftpunyo /home/opuser
 
 
 
 
-
-
-
-
+ls -ld /home/eaiadm && ls -d /home/eaiadm/asteriawarp 2>&1
+ls -ld /disk1/asteria && df -h /home/eaiadm /disk1
+ps -ef | grep -iE 'asteria|flowsvc' | grep -v grep
+ss -lntp | grep -E ':(28080|28443|29899) '
+findmnt -no OPTIONS /tmp | tr ',' '\n' | grep -x noexec
+fc-list :lang=ja | head -3
+dnf info google-noto-sans-cjk-ttc-fonts
+dnf install -y google-noto-sans-cjk-ttc-fonts
+fc-cache -f && fc-list :lang=ja | head -3
+cp -p /home/ec2-user/install-asteriawarp-linux.bin /home/eaiadm/
+chown eaiadm:asteria /home/eaiadm/install-asteriawarp-linux.bin && chmod 755 /home/eaiadm/install-asteriawarp-linux.bin && ls -l /home/eaiadm/install-asteriawarp-linux.bin
+mkdir -p /home/eaiadm/tmp && chown eaiadm:asteria /home/eaiadm/tmp && ls -ld /home/eaiadm/tmp
+su - eaiadm && whoami
+"export JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64
+export PATH=$JAVA_HOME/bin:$PATH
+java -version"
+export IATEMPDIR=/home/eaiadm/tmp && echo $IATEMPDIR
+cd /home/eaiadm && ./install-asteriawarp-linux.bin
+【入力】2 を入力して ENTER
+【入力】ENTER
+【入力】ENTER を繰り返して末尾まで表示し、「この使用許諾契約の条項に同意しますか。 (Y/N):」で Y を入力して ENTER
+【入力】/home/eaiadm/asteriawarp を入力して ENTER
+【入力】一覧に /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64 配下の java が表示されていればその番号を入力して ENTER。表示されない場合は「2- システムにすでにインストールされている Java VM を選択」の番号を入力し、画面の指示に従って /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64/jre/bin/java を入力して ENTER
+【入力】内容（製品名: ASTERIA Warp／インストール フォルダー: /home/eaiadm/asteriawarp／Java VM: /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64）を確認して ENTER
+ls -l /home/eaiadm/asteriawarp && ls -l /home/eaiadm/asteriawarp/boot/bin /home/eaiadm/asteriawarp/server/bin
+cd /home/eaiadm/asteriawarp && ./boot/bin/flowsvc
+sleep 10 && cat boot/log/Bootstrap0.log
+ss -lnt | grep ':28080 '
+systemctl is-active firewalld
+firewall-cmd --permanent --add-port=28080/tcp && firewall-cmd --reload && firewall-cmd --list-ports
+【操作】ブラウザで http://<サーバのホスト名または IP アドレス>:28080/index.html を開く
+【操作】ユーザーサイトのアカウント情報（＜別途管理＞）を入力して次へ進む
+【操作】ユーザーサイトからダウンロードしたライセンスキー（＜別途管理＞）を入力して次へ進む
+"【操作】データフォルダー：/disk1/asteria/asteriahome
+ポート番号：20000
+スーパーユーザー（/asu）のパスワード：＜別途管理＞
+プロキシ情報：設定しない
+を入力して次へ進む"
+"【操作】「作業用のユーザーを作成する」にチェック
+ユーザーの権限：administrator
+ユーザーの名前：<作業用ユーザー名>
+ユーザーのパスワード：＜別途管理＞
+「ホームフォルダーにサンプルフローをコピーする」：チェックしない"
+【操作】「完了」をクリックする
+cd /home/eaiadm/asteriawarp && ./server/bin/fsctrl status
+ps -ef | grep asteriawarp | grep -v grep
+ss -lntp | grep -E ':(28080|29899) '
+ls -ld /disk1/asteria/asteriahome && ls /disk1/asteria/asteriahome
+grep -iE 'error|exception' boot/log/Bootstrap0.log
+【操作】http://<サーバのホスト名または IP アドレス>:28080/ を開き、作業用ユーザー（または /asu）でログインし、「システム＞ライセンス情報」を開く
+./boot/bin/fsstop && sleep 10 && ./server/bin/fsctrl status; ps -ef | grep asteriawarp | grep -v grep
+./boot/bin/flowsvc && sleep 30 && ./server/bin/fsctrl status
+exit && whoami
 
 
 

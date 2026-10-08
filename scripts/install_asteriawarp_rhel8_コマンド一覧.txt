@@ -1,0 +1,132 @@
+############################################################################
+# ASTERIA Warp 2406（Linux 64bit版）インストール コマンド一覧  対象：RHEL 8.10
+# 根拠：InstallGuide.pdf（2025-04-04版）1章／2.1.2／2.2／4.1／4.2／5.1.2、ReadMe.txt
+#
+# 【仮の値】資料に確定値が無いもの。環境に合わせて置き換える（要確認）
+#   実行ユーザ／グループ : eaiadm / asteria        （現行 DB サーバの環境定義書と同じ。ユーザ・グループ ver3 には未定義）
+#   媒体配置先           : /home/ec2-user          （媒体配置シートと同じ）
+#   インストールフォルダー: /home/eaiadm/asteriawarp（現行踏襲。InstallGuide のデフォルトは <ホーム>/asteria5）
+#   データフォルダー     : /disk1/asteria/asteriahome（現行踏襲。ディスク構成シートに合わせる）
+#   Java                 : /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64（Java シート。64bit Java 8 必須）
+#   ポート番号のベース   : 20000 → 管理コンソール 28080、fsctrl 29899
+# 【機密】ライセンスキー、ユーザーサイトのアカウント、/asu・作業用ユーザーのパスワード ＝ ＜別途管理＞
+# 【注意】シリアル No.（LAS-ST-1234-567-9876）はライセンスキー取得（ユーザーサイト）で使う。
+#         インストーラー・初期設定画面に入力する箇所は InstallGuide に無い（要確認）。
+############################################################################
+
+### 0. 事前確認（root） --------------------------------------------------------
+whoami                                                    # root であること
+cat /etc/redhat-release                                   # Red Hat Enterprise Linux release 8.10 (Ootpa)
+uname -m                                                  # x86_64（Linux 64bit 版）
+id eaiadm                                                 # uid=400(eaiadm) gid=400(asteria)。無ければユーザ・グループ手順で先に作成
+getent group asteria
+/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64/bin/java -version   # openjdk version "1.8.0_xxx" と「64-Bit Server VM」が表示されること（InstallGuide 1.5）
+ls -l /home/ec2-user/install-asteriawarp-linux.bin        # 約 205,406,613 バイト（配布媒体と同じサイズ）
+sha256sum /home/ec2-user/install-asteriawarp-linux.bin    # 公式ハッシュの提供が無いため、値を記録して媒体元と突き合わせる
+ls -ld /home/eaiadm                                       # drwx------ eaiadm asteria
+ls -d /home/eaiadm/asteriawarp 2>&1                       # 「No such file or directory」＝新規インストール（旧版と同じフォルダー不可：InstallGuide 1.6.1）
+df -h /home/eaiadm /disk1                                 # インストール先・データ領域の空き容量（目安 2GB 以上。要確認）
+ls -ld /disk1/asteria 2>&1                                # データフォルダーの親。無ければディスク構成手順で先に作成
+ps -ef | grep -iE 'asteria|flowsvc' | grep -v grep        # 何も表示されないこと（旧版・前回分が起動していない）
+ss -lntp | grep -E ':(28080|28443|29899) '                # 何も表示されないこと（使用予定ポートが空いている）
+findmnt -no OPTIONS /tmp | tr ',' '\n' | grep -x noexec   # 表示された場合は 2. で IATEMPDIR を設定する（InstallAnywhere の展開先）
+fc-list :lang=ja | head -3                                # 日本語フォントが 1 行以上表示されること（InstallGuide 1.6.5。無ければ 1. で導入）
+
+### 1. 日本語フォント導入（0. で fc-list が空のときだけ、root） ----------------
+dnf list available 'google-noto-sans-cjk*' 'ipa-*-fonts' 'vlgothic*'   # 導入できるフォントの確認（パッケージ名は要確認）
+dnf install -y google-noto-sans-cjk-ttc-fonts             # 管理コンソールの画像生成用。別フォントにする場合は読み替え
+fc-cache -f
+fc-list :lang=ja | head -3                                # 1 行以上表示されること
+
+### 2. 媒体配置（root） --------------------------------------------------------
+cp -p /home/ec2-user/install-asteriawarp-linux.bin /home/eaiadm/
+chown eaiadm:asteria /home/eaiadm/install-asteriawarp-linux.bin
+chmod 755 /home/eaiadm/install-asteriawarp-linux.bin
+ls -l /home/eaiadm/install-asteriawarp-linux.bin          # -rwxr-xr-x eaiadm asteria 205406613
+mkdir -p /home/eaiadm/tmp && chown eaiadm:asteria /home/eaiadm/tmp   # /tmp が noexec のときのみ（IATEMPDIR 用）
+
+### 3. インストール（実行ユーザ eaiadm。root では実行しない：InstallGuide 1.4） --
+su - eaiadm
+whoami                                                    # eaiadm
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64
+export PATH=$JAVA_HOME/bin:$PATH                          # インストーラーがすぐ終了する場合の対策（InstallGuide 2.1.2 手順3 ※）
+java -version                                             # 1.8.0 / 64-Bit であること
+export IATEMPDIR=/home/eaiadm/tmp                         # /tmp が noexec のときのみ
+cd /home/eaiadm
+./install-asteriawarp-linux.bin                           # コンソール対話式。以下のプロンプトに順に入力する
+
+# ---- インストーラーの対話（InstallGuide 2.1.2 手順4～11）----
+#  [CHOOSE LOCALE BY NUMBER:]                 → 2            （2- 日本語）
+#  [開始画面  続行するには ENTER キーを押します] → ENTER
+#  [使用許諾契約]                             → ENTER を繰り返して末尾まで読み、
+#  [この使用許諾契約の条項に同意しますか。(Y/N)] → Y
+#  [インストール フォルダを選択]               → /home/eaiadm/asteriawarp   （絶対パス。存在しない場合は作成確認に Y）
+#  [Java Virtual Machine の選択]               → 一覧に /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64/... が有ればその番号
+#                                               無ければ 2（システムにインストール済みの Java VM を選択）を選び、
+#                                               /usr/lib/jvm/java-1.8.0-amazon-corretto.x86_64/jre/bin/java を入力
+#  [インストール内容の確認]                   → 製品名 ASTERIA Warp／フォルダー／Java VM を確認して ENTER
+#  [インストール中...]                        → 進捗バーが 100% になりプロンプトが戻れば完了
+
+ls -l /home/eaiadm/asteriawarp                            # boot server などが作成されていること
+ls -l /home/eaiadm/asteriawarp/boot/bin                   # flowsvc fsstop があること
+ls -l /home/eaiadm/asteriawarp/server/bin                 # fsctrl fsmon flow-ctrl があること
+
+### 4. 初期設定（eaiadm。InstallGuide 2.2.1 Linux の場合～2.2.2） ---------------
+cd /home/eaiadm/asteriawarp
+./boot/bin/flowsvc                                        # 初期設定画面（Web）を起動。プロンプトは戻る
+sleep 10 && cat boot/log/Bootstrap0.log                   # 「Initial Settings」「Open 'http://[server]:28080/index.html' with a web browser.」が出ること
+ss -lnt | grep ':28080 '                                  # LISTEN していること
+
+# ---- ブラウザ操作（作業端末から。InstallGuide 2.2.2 手順1～5）----
+#  URL: http://<サーバのIPまたはホスト名>:28080/index.html   ※ 到達しない場合は 7. のファイアウォール／SG を確認
+#  1) ユーザーサイトのアカウント情報   → ＜別途管理＞
+#  2) ライセンスキー                   → ＜別途管理＞（ユーザーサイトからダウンロード済みのもの）
+#  3) データフォルダー                 → /disk1/asteria/asteriahome（絶対パス）
+#     ポート番号                       → 20000
+#     スーパーユーザー(/asu)のパスワード → ＜別途管理＞
+#     プロキシ情報                     → 使う場合のみ（要確認）
+#  4) 作業用のユーザーを作成する       → チェック。権限 administrator、名前・パスワードは要確認／＜別途管理＞
+#     ホームフォルダーにサンプルフローをコピーする → チェックしない（本番用途。要確認）
+#  5) 「完了」                         → 初期設定が実行され、フローサービスが起動する
+
+### 5. 事後確認（eaiadm。InstallGuide 2.2.2 手順6、4.4、4.5） --------------------
+cd /home/eaiadm/asteriawarp
+./server/bin/fsctrl status                                # (localhost:29899) Scheduler ... Running であること（FlowService/ManagementConsole/AccessControl も Running）
+ps -ef | grep -E 'asteriawarp' | grep -v grep             # java プロセスが eaiadm で起動していること
+ss -lntp | grep -E ':(28080|29899) '                      # 28080（管理コンソール）、29899（fsctrl）が LISTEN
+ls -ld /disk1/asteria/asteriahome                         # データフォルダーが作成され eaiadm:asteria であること
+ls /disk1/asteria/asteriahome                             # home などが作成されていること（内容は要確認）
+ls -lt boot/log | head                                    # Bootstrap0.log にエラーが無いこと
+grep -iE 'error|exception' boot/log/Bootstrap0.log        # 何も表示されないこと
+#  ブラウザ: http://<サーバ>:28080/  に /asu または作業用ユーザーでログインできること（InstallGuide 4.4／4.5）
+#  管理コンソール「システム＞ライセンス情報」でエディションと有効期限を確認（要確認）
+
+### 6. 停止・起動の確認（eaiadm。InstallGuide 4.1／4.2） ------------------------
+cd /home/eaiadm/asteriawarp
+./boot/bin/fsstop                                         # フローサービス停止（fsctrl shutdown と同等）
+sleep 10 && ./server/bin/fsctrl status                    # 接続できない（終了コード -1）または Stopped
+ps -ef | grep -E 'asteriawarp' | grep -v grep             # 何も表示されないこと
+./boot/bin/flowsvc                                        # 起動
+sleep 30 && ./server/bin/fsctrl status                    # Scheduler ... Running
+exit                                                      # root に戻る
+#  ※ OS 起動時の自動起動（systemd）は InstallGuide に記載なし → 「自動起動」手順書で扱う
+
+### 7. ネットワーク（root。初期設定画面に到達できない場合のみ。要確認） ----------
+systemctl is-active firewalld                             # active なら下を実施。inactive なら AWS セキュリティグループのみ確認
+firewall-cmd --permanent --add-port=28080/tcp             # 管理コンソール（必要なら 28443/tcp も）
+firewall-cmd --reload
+firewall-cmd --list-ports                                 # 28080/tcp が表示されること
+#  AWS セキュリティグループで作業端末 → サーバの TCP 28080 を許可（要確認）
+
+### 8. 切り戻し（InstallGuide 5.1.2。作業責任者の判断で実施） ---------------------
+su - eaiadm
+cd /home/eaiadm/asteriawarp && ./boot/bin/fsstop          # 実行中なら停止
+sleep 10 && ps -ef | grep -E 'asteriawarp' | grep -v grep # 何も表示されないこと
+exit
+ls -ld /home/eaiadm/asteriawarp /disk1/asteria/asteriahome   # 削除対象のパスを目視確認
+rm -rf /home/eaiadm/asteriawarp                           # インストールフォルダーの削除
+rm -rf /disk1/asteria/asteriahome                         # データフォルダーの削除（必要に応じて。フロー・設定が消える）
+rm -f  /home/eaiadm/install-asteriawarp-linux.bin         # 配置した媒体の削除
+rm -rf /home/eaiadm/tmp                                   # IATEMPDIR を作った場合のみ
+ls -d /home/eaiadm/asteriawarp /disk1/asteria/asteriahome 2>&1   # 「No such file or directory」が 2 行
+ss -lnt | grep -E ':(28080|29899) '                       # 何も表示されないこと
