@@ -94,6 +94,207 @@ AP サーバ（RHEL 8.10）の「ユーザ・グループ」構築手順書を�
 
 
 
+目前我使用RHE5.4有如下用户。
+weblogic    700    oinstall    600    /home/weblogic    /bin/bash
+cm_usr    2100    oinstall    600    /home/cm_usr    /bin/ksh
+pportal    2101    oinstall    600    /home/pportal    /bin/ksh
+pprel    2102    oinstall    600    /home/pprel    /bin/ksh
+pfusr    2200    pfusr    2200    /home/pfusr    /bin/bash
+ftpunyo    2500    ftpuser    2500    /home/ftpunyo    /bin/bash
+opuser    2510    OP    2510    /home/opuser    /bin/bash
+接下来我要转成RHEL8.10，并将其中的weblogic转为tomcat，但其他功能不受影响，请问，接下来在RHEL8.10当中，应该如何创建这些用户。tomcat用户替换了weblogic之后，为了使之前的weblogic和其他功能之间的交互不受影响，tomcat应该如何生成用户和group。请给我做详细说明。
+另外，我在RHEL8.10上要安装
+tomcat9.0.122
+aws corretto 8
+重新给我生成
+Tomcat
+Java
+ユーザ・グループ
+媒体配置
+環境設定
+ディスク構成
+サーバ証明書
+的sheet，自动升版即可。
+C:\workspace\SystemMigration\AP下的APサーバ構築手順書_1.xlsx和環境定義書(icwaq01w).xlsx
+
+
+
+# 背景
+現行の AP サーバは RHEL 5.4 で稼働しています。これを RHEL 8.10 へ移行します。
+移行にあわせて、WebLogic を Tomcat に置き換えます。それ以外の機能(cm_usr、pportal、pprel、pfusr、ftpunyo、opuser)への影響は避けます。
+
+# 現行(RHEL 5.4)のユーザ一覧
+列:ユーザ名 / UID / プライマリグループ名 / GID / ホームディレクトリ / ログインシェル
+weblogic  700   oinstall  600   /home/weblogic  /bin/bash
+cm_usr    2100  oinstall  600   /home/cm_usr    /bin/ksh
+pportal   2101  oinstall  600   /home/pportal   /bin/ksh
+pprel     2102  oinstall  600   /home/pprel     /bin/ksh
+pfusr     2200  pfusr     2200  /home/pfusr     /bin/bash
+ftpunyo   2500  ftpuser   2500  /home/ftpunyo   /bin/bash
+opuser    2510  OP        2510  /home/opuser    /bin/bash
+
+# 移行後の構成
+- OS:RHEL 8.10
+- Tomcat:9.0.122(最新版)
+- Java:Amazon Corretto 8(最新版)
+- weblogic ユーザは tomcat ユーザに置き換える。
+
+# 入力ファイル(すべて読み取り専用)
+- C:\workspace\SystemMigration\AP\APサーバ構築手順書_1.xlsx
+- C:\workspace\SystemMigration\AP\環境定義書(icwaq01w).xlsx(「OSユーザ一覧」シートほか全シート)
+- C:\workspace\SystemMigration\templates\APサーバ構築手順書_temp_ver1.xlsx(tempシート)
+- 既存の出力:C:\workspace\SystemMigration\sheets 配下の各 ver ファイル
+
+# 依頼 1:ユーザ・グループの設計説明(日本語で詳細に)
+1. RHEL 8.10 での各ユーザ・グループの作成方法(groupadd / useradd のコマンド例)。グループを先、ユーザを後に作成する。
+2. tomcat ユーザの設計。
+   - UID・GID を weblogic(700 / oinstall:600)から引き継ぐ案と新規採番する案を比較し、推奨案を示す。
+   - oinstall(GID 600)との関係。cm_usr、pportal、pprel とのファイル権限、グループ共有、ディレクトリ所有者の整合性。
+   - ホームディレクトリ、ログインシェル。
+   - 既存ファイルの所有者を変更する場合の chown の対象と手順。
+3. RHEL 5.4 → 8.10 の差異と注意点(UID/GID の範囲、/etc/login.defs、useradd の既定動作、ksh の導入、SELinux、systemd 管理など)。
+4. 判断できない点は推測せず、【要確認】と記載する。
+
+# 依頼 2:手順書シートの再作成
+次の 7 シートを再作成する。
+1. Tomcat(9.0.122)
+2. Java(Amazon Corretto 8)
+3. ユーザ・グループ
+4. 媒体配置
+5. OS環境設定
+6. ディスク構成
+7. サーバ証明書
+
+共通方針:
+- テンプレートの temp シートの構成・書式・レイアウトを踏襲する。
+- 参照元と環境定義書の値を、改変・省略せずに転記する。
+- 記載のない項目、読み取れない値、判断に迷う点は推測せず、【要確認】とする。
+- パスワード、秘密鍵などの機密情報は転記せず、<パスワード> 等とする。
+- コマンドは 1 セルに 1 つとし、環境ごとに変わる値は <> で囲む。
+- 各シートは、事前確認、作業、事後確認、切り戻しの順に作る。
+- RHEL 8.10 で変更が必要な箇所(コマンド、パッケージ名、systemd、crypto-policies など)は、変更点を備考に記載する。
+
+シート別の追加指示:
+- ユーザ・グループ:グループ→ユーザの順。tomcat ユーザは依頼 1 の推奨案を反映する。weblogic の行は tomcat に置き換える。
+- Tomcat:Tomcat 9.0.122 を使い、実行ユーザは tomcat とする。WebLogic 固有の設定は、Tomcat 向けの設定に読み替える。読み替えの根拠が不明な箇所は【要確認】とする。
+- Java:Corretto 8 のインストール方法、JAVA_HOME、alternatives の設定を記載する。
+- 媒体配置:Tomcat、Corretto、その他の媒体の配置先、ファイル名、権限、所有者、チェックサム確認を記載する。
+- OS環境設定:カーネルパラメータ、ulimit、ホスト名、時刻同期、SELinux、firewalld などを、環境定義書に基づいて記載する。
+- ディスク構成:パーティション、LVM、ファイルシステム、マウントポイント、/etc/fstab、容量を記載する。
+- サーバ証明書:CSR 作成、証明書配置、Tomcat への適用、有効期限確認を記載する。秘密鍵は転記しない。
+
+# 作成順序
+ユーザ・グループ → ディスク構成 → OS環境設定 → 媒体配置 → Java → Tomcat → サーバ証明書
+(前のシートが後のシートの前提となるため。)
+
+# 出力
+- 出力先:C:\workspace\SystemMigration\sheets
+- ファイル名:APサーバ構築手順書_[シート名]_ver<N>.xlsx
+- 版数は、同名ファイルの最大 ver に 1 を足して自動で付ける。既存ファイルは上書きしない。
+- 各ファイルには該当シート 1 枚のみを含める(表紙、変更履歴、目次、temp は含めない)。
+- 保存後にファイルを開き直し、シート名、入力規則、フィルタ、ウィンドウ枠、印刷設定を確認する。
+
+# 守ってほしいこと
+- 入力ファイルまたは必要なシートが見つからない、または読めない場合は、該当シートの作業を止めて報告し、他のシートは続行する。
+
+# 完了報告
+- 保存したファイルのフルパスとシート名の一覧
+- 取り込んだユーザ・グループの一覧(件数を含む)
+- 旧版からの変更点(シートごと)
+- 【要確認】の一覧(シートごと)
+
+
+我要在RHEL8.10上创建一些用户和组，这些都是我自己的用户，用户ID和组ID可以变更。不用非得和下面的列表一下。最好加一些comment。
+cpbackup    501    cpbackup    501    /home/cpbackup    /bin/bash    cpbackup
+weblogic    700    oinstall    600    /home/weblogic    /bin/bash
+cm_usr    2100    oinstall    600    /home/cm_usr    /bin/ksh
+pfusr    2200    pfusr    2200    /home/pfusr    /bin/bash
+ftpunyo    2500    ftpuser    2500    /home/ftpunyo    /bin/bash
+opuser    2510    OP    2510    /home/opuser    /bin/bash
+需要加一些注释来说明每个用户的用途和权限设置。
+注释需要明确用户的用途、权限设置、所属组以及任何特殊的配置或限制。
+需要每个用户的确认是否存在，选定的id是否存在，如果没有则创建用户和组。
+创建完成之后，需要切换到这个用户，然后查看profile文件。
+
+
+
+
+
+
+# 目的
+RHEL 8.10 上に、次のユーザ・グループを作成するシェルスクリプトと手順を作成する。
+UID と GID は、下表の値に固定しない。ただし、重複しない値を選ぶこと。
+
+# 対象ユーザ(参考値)
+列:ユーザ名 / UID / プライマリグループ名 / GID / ホームディレクトリ / ログインシェル / 備考
+cpbackup  501   cpbackup  501   /home/cpbackup  /bin/bash  cpbackup
+weblogic  700   oinstall  600   /home/weblogic  /bin/bash  (なし)
+cm_usr    2100  oinstall  600   /home/cm_usr    /bin/ksh   (なし)
+pfusr     2200  pfusr     2200  /home/pfusr     /bin/bash  (なし)
+ftpunyo   2500  ftpuser   2500  /home/ftpunyo   /bin/bash  (なし)
+opuser    2510  OP        2510  /home/opuser    /bin/bash  (なし)
+
+- 参考値の UID/GID が使用済みの場合は、未使用の値に変更してよい。
+- 変更した場合は、変更前後の値と理由をコメントに残す。
+- cpbackup の備考「cpbackup」の意味は不明。推測せず、【要確認】とする。
+- weblogic を tomcat に置き換えるかは【要確認】とする。置き換える場合は、ユーザ名のみを変更する。
+
+# 採番ルール
+- システム用途のユーザ:RHEL 8 の一般ユーザ範囲(1000 以上)を推奨する。
+- 参考値が未使用ならそのまま使う。使用済みなら、同じ範囲の次の空き番号を使う。
+- 複数ユーザが同じグループ(oinstall)を共有する場合は、グループを 1 回だけ作成する。
+
+# 処理内容
+1. グループごとに、グループ名の存在と GID の使用状況を確認する(getent group <グループ名>、getent group <GID>)。
+   - グループ名が存在する場合:作成せず、既存 GID を使う。
+   - グループ名がなく GID が未使用の場合:参考値の GID で作成する。
+   - グループ名がなく GID が使用済みの場合:空き GID を選んで作成する。
+2. ユーザごとに、ユーザ名の存在と UID の使用状況を確認する(id <ユーザ名>、getent passwd <UID>)。
+   - 存在する場合:作成せず、現状(id、passwd 行)を表示して、定義との差異を報告する。
+   - 存在しない場合:UID の重複を確認してから作成する(useradd -u <UID> -g <グループ> -d <ホーム> -m -s <シェル> -c "<コメント>" <ユーザ名>)。
+3. ログインシェルが存在することを確認する。/bin/ksh は ksh パッケージが必要。未導入なら dnf install -y ksh を実行する。
+4. 作成後、各ユーザに切り替えて profile を確認する。
+   - su - <ユーザ名> -c 'id; echo $SHELL; pwd'
+   - cat ~/.bash_profile ~/.bashrc(bash の場合)
+   - cat ~/.profile(ksh の場合)
+   - /etc/skel から配布されたファイルの有無も確認する。
+5. パスワードは設定しない。必要な場合は <パスワード> とし、本文に実値を書かない。
+
+# コメント(注釈)の要件
+- 各ユーザについて、スクリプトの該当箇所に次の項目をコメントで記載する。
+  1. 用途(例:バックアップ用、アプリ実行用、FTP 用)
+  2. 権限設定(sudo の有無、ホームディレクトリの権限、umask)
+  3. 所属グループ(プライマリ、補助)
+  4. 特殊な設定・制限(ログインシェル、ログイン可否、パスワード期限など)
+  5. UID/GID を変更した場合の変更前後の値
+- 用途や権限が分からないものは推測せず、【要確認】と記載する。
+- コメントは日本語で書く。
+
+# 出力形式
+1. 実行用シェルスクリプト(bash、冪等、root で実行)
+   - set -u を使い、各処理の結果(作成/既存/スキップ/エラー)を表示する。
+   - 既存ユーザ・グループは変更しない。
+2. 確認結果の一覧表(ユーザ名、UID、GID、グループ、ホーム、シェル、状態)
+3. 【要確認】の一覧
+
+# 注意
+- 本番環境で実行する前に、検証環境で動作を確認する。
+- ユーザ削除やホームの削除は行わない。
+
+
+
+下記
+フォルダ：C:\workspace\SystemMigration\AP
+ファイル：環境定義書(icwah01w).xlsx
+シート：ディレクトリ一覧
+を読み取り、記載するディレクトリを作成する。
+
+
+
+
+
+
+
 
 
 

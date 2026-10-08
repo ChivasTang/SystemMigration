@@ -22,6 +22,23 @@ gpgkey=https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-8
 priority=100
 EOF
 
+cat > /etc/yum.repos.d/almalinux8-baseos.repo <<'EOF'
+[almalinux8-baseos]
+name=AlmaLinux 8 - BaseOS
+baseurl=https://repo.almalinux.org/almalinux/8/BaseOS/x86_64/os/
+enabled=1
+gpgcheck=1
+gpgkey=https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux-8
+EOF
+
+dnf repolist --all
+dnf repoinfo almalinux8-baseos
+dnf clean all
+dnf makecache
+dnf makecache --refresh
+dnf check-update
+
+
 # 登録されているリポジトリの一覧
 dnf repolist
 
@@ -46,6 +63,7 @@ dnf info httpd
 dnf info mod_ssl
 dnf info openssl
 dnf info vsftpd
+dnf info ksh
 dnf install -y
 dnf info openssl
 dnf info openssl-libs
@@ -73,6 +91,156 @@ dnf remove -y unzip less groff-base gnupg2
 for p in unzip less groff-base gnupg2; do rpm -q $p || dnf install -y $p; done; rpm -q unzip less groff-base gnupg2
 
 for p in awscli unzip less groff-base; do rpm -q $p || dnf remove -y $p; done; for p in awscli unzip less groff-base; do if ! command -v aws >/dev/null 2>&1; then echo "$p removed!"; fi; done;
+
+
+
+
+for p in awscli unzip less groff-base; do rpm -q $p || dnf remove -y $p; done; for p in awscli unzip less groff-base; do if ! command -v aws >/dev/null 2>&1; then echo "$p removed!"; fi; done;
+
+
+dnf install -y unzip
+dnf install -y less
+dnf install -y groff-base
+
+nc -z fujifilm-zsb1.cloud.tanium.com 17472 && echo 'Success' || echo 'Failure'
+nc -z fujifilm-zsb2.cloud.tanium.com 17472 && echo 'Success' || echo 'Failure'
+nc -z fujifilm-zsb1.cloud.tanium.com 17486 && echo 'Success' || echo 'Failure'
+nc -z fujifilm-zsb2.cloud.tanium.com 17486 && echo 'Success' || echo 'Failure'
+[root@qampc1w1 【部門管理サーバ_任意適用】Installer_Linux_rhe9.x86_64_JP_ver.7.6.4.2086]# /opt/Tanium/TaniumClient/TaniumClient --version
+
+
+unzip 【部門管理サーバ_任意適用】Installer_Linux_rhe9.x86_64_JP_ver.7.6.4.2086.zip
+cd 【部門管理サーバ_任意適用】Installer_Linux_rhe9.x86_64_JP_ver.7.6.4.2086
+chmod +x ./install.sh
+oot@qampc1w1 【部門管理サーバ_任意適用】Installer_Linux_rhe9.x86_64_JP_ver.7.6.4.2086]#  ./install.sh
+
+
+cd /tmp/tanium && ./install.sh
+[root@qampc1w1 【部門管理サーバ_任意適用】Installer_Linux_rhe9.x86_64_JP_ver.7.6.4.2086]# /opt/Tanium/TaniumClient/TaniumClient --version
+cd /tmp/tanium && ls -la
+
+
+dnf info falcon-sensor
+uname -m
+
+yum install -y
+
+sudo /opt/CrowdStrike/falconctl -s --cid=c4011b5ffe9e436d91ec3fb5cceca202-A8
+ps -e | grep falcon-sensor
+
+
+古いRHEL5.4のディスク構成は、下記の
+C:\workspace\SystemMigration\AP配下の
+ファイル：環境定義書(icwah01w).xlsx
+シート：ディレクトリ一覧
+で参照できます。
+
+上記踏まえて、新しいRHEL8.10のディスク構築の構築シートを更新してください。
+APサーバ構築手順書_ディスク構成_ver3.xlsxとして出力ください。
+
+注意する点：
+- RHEL5.4は、WebLogicを使用していますが、RHEL8.10ではTomcatに置き換えるため、ディレクトリ構成やパスが変わる可能性があります。
+- ディスク構成の変更点は、備考欄に「既存手順からの変更点」として記載してください。
+
+
+
+# 目的
+RHEL 8.10 の AP サーバ向け「ディスク構成」構築手順書を更新する。
+現行(RHEL 5.4)のディレクトリ構成を参照し、WebLogic から Tomcat への置き換えを反映する。
+
+# 入力(すべて読み取り専用)
+1. 旧環境の定義書:C:\workspace\SystemMigration\AP\環境定義書(icwah01w).xlsx
+   - シート:ディレクトリ一覧(RHEL 5.4 のディスク構成・ディレクトリ構成)
+2. 更新元の手順書:C:\workspace\SystemMigration\sheets 配下の
+   APサーバ構築手順書_ディスク構成_ver*.xlsx のうち最大版数のファイル
+3. テンプレート:C:\workspace\SystemMigration\templates\APサーバ構築手順書_temp_ver1.xlsx(tempシート)
+4. 参考:C:\workspace\SystemMigration\AP\APサーバ構築手順書_1.xlsx
+
+# 前提
+- 旧環境:RHEL 5.4(WebLogic 使用)
+- 新環境:RHEL 8.10(Tomcat 9.0.122、Amazon Corretto 8 を使用)
+- weblogic ユーザは tomcat ユーザに置き換える。
+- ユーザ・グループは、最新版の「ユーザ・グループ」シートの定義に合わせる。
+
+# 作業内容
+1. 「ディレクトリ一覧」シートを全行読み、列の意味を確認する。
+   (パス、用途、所有者、グループ、権限、ファイルシステム、容量、マウント有無 など)
+2. 更新元の手順書の構成と書式を踏襲し、RHEL 8.10 向けに更新する。
+3. WebLogic 関連のディレクトリは、Tomcat 向けに読み替える。
+   - 例:WebLogic のドメイン、アプリ配置先、ログ、temp 等 → Tomcat の CATALINA_HOME、CATALINA_BASE、webapps、logs、temp、conf 等
+   - 所有者は weblogic から tomcat に変更する。
+   - 読み替えの根拠が不明なパスは推測せず、【要確認】とする。
+4. WebLogic 以外のディレクトリ(cm_usr、pportal、pprel、pfusr、ftpunyo、opuser 関連など)は、旧環境の値を改変せず引き継ぐ。
+5. RHEL 8.10 で変更が必要な箇所(fstab のオプション、ファイルシステムを xfs にするか、LVM、SELinux コンテキストなど)は、変更点として記載する。
+6. 手順は、事前確認、作業、事後確認、切り戻しの順に作る。
+   - 作業:パーティション/LVM 作成 → ファイルシステム作成 → マウントポイント作成 → /etc/fstab 設定 → マウント → 所有者・権限設定
+   - 事後確認:df -h、lsblk、mount、ls -ld、/etc/fstab の内容が定義と一致すること
+   - コマンドは 1 セルに 1 つとし、環境ごとに変わる値は <> で囲む。
+
+# 備考欄の記載ルール
+- 旧手順から変更した行には、備考欄に「既存手順からの変更点」として次の形式で記載する。
+  「既存手順からの変更点:<旧値> → <新値>(理由:<WebLogic→Tomcat 置換 など>)」
+- 変更がない行は、備考欄に変更点を記載しない。
+- 新規に追加した行は「既存手順からの変更点:新規追加」とする。
+- 削除した行(WebLogic 専用で不要になったもの)は、削除した旨と理由をシート末尾の一覧に記載する。
+
+# 出力
+- 出力先:C:\workspace\SystemMigration\sheets
+- ファイル名:APサーバ構築手順書_ディスク構成_ver<N>.xlsx
+  - N は、既存の最大版数に 1 を足す(現状 ver2 までなら ver3)。
+  - 既存ファイルは変更・上書きしない。
+- ファイルには「ディスク構成」シート 1 枚のみを含める(表紙、変更履歴、目次、temp は含めない)。
+- 保存後にファイルを開き直し、シート名、入力規則、フィルタ、ウィンドウ枠、印刷設定を確認する。
+
+# 守ってほしいこと
+- 入力ファイルまたは「ディレクトリ一覧」シートが見つからない、または読めない場合は、作業を止めて報告する。
+- 定義書にない項目、読み取れない値、判断に迷う点は推測せず、【要確認】と記載する。
+- パスワードなどの機密情報は転記せず、<パスワード> とする。
+
+# 完了報告
+- 保存したファイルのフルパス
+- 旧環境から取り込んだディレクトリの一覧(件数を含む)
+- 既存手順からの変更点の一覧(WebLogic→Tomcat の読み替え表を含む)
+- 削除した行の一覧
+- 【要確認】の一覧
+
+dnf install -y logrotate cronie mlocate
+dnf info logrotate
+dnf info cronie
+dnf info mlocate
+dnf info glibc-langpack-ja
+dnf install -y glibc-langpack-ja
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

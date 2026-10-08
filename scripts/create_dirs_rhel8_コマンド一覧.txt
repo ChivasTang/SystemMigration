@@ -1,0 +1,185 @@
+### 0. 事前確認 ----------------------------------------------------------
+whoami                                                   # root であること
+id weblogic                                              # 所有者ユーザの存在（tomcat に置き換える場合は id tomcat）
+id cpbackup
+id pfusr
+getent group oinstall webadmin cpbackup pfusr            # 4 行表示されること（webadmin は OSユーザ一覧に定義なし【要確認】）
+findmnt /disk1                                           # マウント済みであること（未マウントなら /disk1 配下は作らない）
+findmnt /disk2
+getenforce                                               # Enforcing/Permissive なら最後に restorecon を実行
+ls -ld /disk1 /disk2 /opt /home /home/weblogic /usr /usr/local /usr/local/bin /usr/local/lib   # 既存分の現状を記録（変更しない）
+
+### 1. 作成（1 行＝1 ディレクトリ：mkdir -p → chown → chmod。既存のものは ls -ld で確認のみ） ------
+### 所有者 weblogic を tomcat に置き換える場合は「chown weblogic:」を「chown tomcat:」に読み替える【要確認】
+# ---- /disk1 ----
+ls -ld /disk1                                                       # [6行目] マウントポイント root:root 755（既存。変更しない）
+# ---- /disk1/kq ----
+mkdir -p /disk1/kq && chown root:root /disk1/kq && chmod 777 /disk1/kq  # [7行目]
+mkdir -p /disk1/kq/pf && chown pfusr:pfusr /disk1/kq/pf && chmod 777 /disk1/kq/pf  # [8行目]
+mkdir -p /disk1/kq/pf/pfusr && chown pfusr:pfusr /disk1/kq/pf/pfusr && chmod 777 /disk1/kq/pf/pfusr  # [9行目]
+mkdir -p /disk1/kq/pf/pfusr/seinou && chown pfusr:pfusr /disk1/kq/pf/pfusr/seinou && chmod 777 /disk1/kq/pf/pfusr/seinou  # [10行目] 性能情報取得用SHELL格納先、性能情報格納先
+mkdir -p /disk1/kq/pf/pfusr/work && chown pfusr:pfusr /disk1/kq/pf/pfusr/work && chmod 777 /disk1/kq/pf/pfusr/work  # [11行目] 性能チーム作業用ディレクトリ
+mkdir -p /disk1/kq/pf/seinou && chown weblogic:webadmin /disk1/kq/pf/seinou && chmod 777 /disk1/kq/pf/seinou  # [12行目] 性能情報取得用SHELL格納先、性能情報格納先
+# ---- /disk1/weblogic ----
+mkdir -p /disk1/weblogic && chown weblogic:oinstall /disk1/weblogic && chmod 755 /disk1/weblogic  # [13行目] Weblogicディレクトリ (※[統合顧客DBシステム WebLogic設計書]を参照) WebLogic 専用【要確認】
+mkdir -p /disk1/weblogic/projects && chown weblogic:oinstall /disk1/weblogic/projects && chmod 755 /disk1/weblogic/projects  # [14行目] WebLogic 専用【要確認】
+mkdir -p /disk1/weblogic/logs && chown weblogic:oinstall /disk1/weblogic/logs && chmod 777 /disk1/weblogic/logs  # [15行目] WebLogic 専用【要確認】
+# ---- /disk1/hyojun ----
+mkdir -p /disk1/hyojun && chown weblogic:webadmin /disk1/hyojun && chmod 775 /disk1/hyojun  # [16行目] マスタメンテナンス機能リリース
+mkdir -p /disk1/hyojun/build_bak && chown weblogic:webadmin /disk1/hyojun/build_bak && chmod 775 /disk1/hyojun/build_bak  # [17行目] Warファイルの退避ディレクトリ
+mkdir -p /disk1/hyojun/build && chown weblogic:webadmin /disk1/hyojun/build && chmod 775 /disk1/hyojun/build  # [18行目] マスタメンテナンス機能リリース
+mkdir -p /disk1/hyojun/build/webapi && chown weblogic:webadmin /disk1/hyojun/build/webapi && chmod 775 /disk1/hyojun/build/webapi  # [19行目]
+mkdir -p /disk1/hyojun/build/webapi/application && chown weblogic:webadmin /disk1/hyojun/build/webapi/application && chmod 775 /disk1/hyojun/build/webapi/application  # [20行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF  # [21行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src  # [22行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp  # [23行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co  # [24行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox  # [25行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq  # [26行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap  # [27行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi  # [28行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean  # [29行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgr && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgr && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgr  # [30行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgr/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgr/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgr/output  # [31行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrchgupl && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrchgupl && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrchgupl  # [32行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrchgupl/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrchgupl/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrchgupl/output  # [33行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcst && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcst && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcst  # [34行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcst/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcst/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcst/output  # [35行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcstupl && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcstupl && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcstupl  # [36行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcstupl/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcstupl/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrcstupl/output  # [37行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrupl && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrupl && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrupl  # [38行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrupl/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrupl/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/comgrupl/output  # [39行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/duty && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/duty && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/duty  # [40行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/duty/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/duty/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/duty/output  # [41行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp014 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp014 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp014  # [42行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp014/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp014/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp014/output  # [43行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp015 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp015 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp015  # [44行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp015/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp015/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp015/input  # [45行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017  # [46行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017/input  # [47行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp017/output  # [48行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp018 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp018 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp018  # [49行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp018/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp018/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp018/input  # [50行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp019 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp019 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp019  # [51行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp019/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp019/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp019/input  # [52行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp020 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp020 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp020  # [53行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp020/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp020/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp020/input  # [54行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp021 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp021 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp021  # [55行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp021/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp021/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp021/input  # [56行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp022 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp022 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp022  # [57行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp022/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp022/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp022/input  # [58行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp023 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp023 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp023  # [59行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp023/output && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp023/output && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp023/output  # [60行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp024 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp024 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp024  # [61行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp024/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp024/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp024/input  # [62行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp025 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp025 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp025  # [63行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp025/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp025/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp025/input  # [64行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp026 && chown root:root /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp026 && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp026  # [65行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp026/input && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp026/input && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/bean/kqap10imp026/input  # [66行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component  # [67行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component/logic && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component/logic && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component/logic  # [68行目]
+mkdir -p /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component/logic/common && chown weblogic:webadmin /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component/logic/common && chmod 775 /disk1/hyojun/build/webapi/application/WEB-INF/src/jp/co/fujixerox/kq/ap/webapi/component/logic/common  # [69行目]
+mkdir -p /disk1/hyojun/build/svc_sts && chown weblogic:webadmin /disk1/hyojun/build/svc_sts && chmod 775 /disk1/hyojun/build/svc_sts  # [70行目] サービスステータス監視機能リリース
+mkdir -p /disk1/hyojun/build/svc_sts/src && chown weblogic:webadmin /disk1/hyojun/build/svc_sts/src && chmod 775 /disk1/hyojun/build/svc_sts/src  # [71行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp && chown root:root /disk1/hyojun/build/svc_sts/src/jp && chmod 775 /disk1/hyojun/build/svc_sts/src/jp  # [72行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp/co && chown root:root /disk1/hyojun/build/svc_sts/src/jp/co && chmod 775 /disk1/hyojun/build/svc_sts/src/jp/co  # [73行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox && chown root:root /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox && chmod 775 /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox  # [74行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq && chown root:root /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq && chmod 775 /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq  # [75行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts && chown weblogic:webadmin /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts && chmod 775 /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts  # [76行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts/handler && chown weblogic:webadmin /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts/handler && chmod 775 /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts/handler  # [77行目]
+mkdir -p /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts/util && chown weblogic:webadmin /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts/util && chmod 775 /disk1/hyojun/build/svc_sts/src/jp/co/fujixerox/kq/svcsts/util  # [78行目]
+mkdir -p /disk1/hyojun/build/svc_sts/resource && chown weblogic:webadmin /disk1/hyojun/build/svc_sts/resource && chmod 775 /disk1/hyojun/build/svc_sts/resource  # [79行目]
+mkdir -p /disk1/hyojun/build/svc_sts/lib && chown weblogic:webadmin /disk1/hyojun/build/svc_sts/lib && chmod 775 /disk1/hyojun/build/svc_sts/lib  # [80行目]
+mkdir -p /disk1/hyojun/svc_sts && chown weblogic:webadmin /disk1/hyojun/svc_sts && chmod 775 /disk1/hyojun/svc_sts  # [81行目]
+mkdir -p /disk1/hyojun/svc_sts/lib && chown weblogic:webadmin /disk1/hyojun/svc_sts/lib && chmod 775 /disk1/hyojun/svc_sts/lib  # [82行目]
+mkdir -p /disk1/hyojun/svc_sts/logs && chown weblogic:webadmin /disk1/hyojun/svc_sts/logs && chmod 775 /disk1/hyojun/svc_sts/logs  # [83行目]
+# ---- /disk1/httpd ----
+mkdir -p /disk1/httpd && chown root:root /disk1/httpd && chmod 755 /disk1/httpd  # [84行目]
+mkdir -p /disk1/httpd/logs && chown root:root /disk1/httpd/logs && chmod 700 /disk1/httpd/logs  # [85行目] Apacheアクセス・エラーログ格納ディレクトリ
+# ---- /disk1/job ----
+mkdir -p /disk1/job && chown root:root /disk1/job && chmod 755 /disk1/job  # [86行目]
+mkdir -p /disk1/job/conf && chown root:root /disk1/job/conf && chmod 755 /disk1/job/conf  # [87行目] パラメータファイル格納ディレクトリ
+mkdir -p /disk1/job/os && chown root:root /disk1/job/os && chmod 755 /disk1/job/os  # [88行目] os用プログラム格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge && chown root:root /disk1/job/os/file_purge && chmod 755 /disk1/job/os/file_purge  # [89行目] ファイルパージ処理用ディレクトリ
+mkdir -p /disk1/job/os/file_purge/scripts && chown root:root /disk1/job/os/file_purge/scripts && chmod 777 /disk1/job/os/file_purge/scripts  # [90行目] メインプログラム格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge/sub && chown root:root /disk1/job/os/file_purge/sub && chmod 777 /disk1/job/os/file_purge/sub  # [91行目] サブプログラム格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge/sql && chown root:root /disk1/job/os/file_purge/sql && chmod 777 /disk1/job/os/file_purge/sql  # [92行目] SQLプログラム格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge/out && chown root:root /disk1/job/os/file_purge/out && chmod 777 /disk1/job/os/file_purge/out  # [93行目] アウトプットファイル格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge/tmp && chown root:root /disk1/job/os/file_purge/tmp && chmod 777 /disk1/job/os/file_purge/tmp  # [94行目] 一時ファイル格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge/result && chown root:root /disk1/job/os/file_purge/result && chmod 777 /disk1/job/os/file_purge/result  # [95行目] 結果ファイル格納ディレクトリ
+mkdir -p /disk1/job/os/file_purge/log && chown root:root /disk1/job/os/file_purge/log && chmod 777 /disk1/job/os/file_purge/log  # [96行目] ログファイル格納ディレクトリ
+mkdir -p /disk1/job/os/scripts && chown root:root /disk1/job/os/scripts && chmod 777 /disk1/job/os/scripts  # [97行目] (監査ログ取得処理用)メインプログラム格納ディレクトリ
+mkdir -p /disk1/job/os/result && chown root:root /disk1/job/os/result && chmod 777 /disk1/job/os/result  # [98行目] (監査ログ取得処理用)サブプログラム格納ディレクトリ
+mkdir -p /disk1/job/os/result/apache && chown root:root /disk1/job/os/result/apache && chmod 755 /disk1/job/os/result/apache  # [99行目] apache監査ログ格納ディレクトリ
+mkdir -p /disk1/job/os/result/ftp && chown root:root /disk1/job/os/result/ftp && chmod 755 /disk1/job/os/result/ftp  # [100行目] ftp監査ログ格納ディレクトリ
+mkdir -p /disk1/job/os/result/iptables && chown root:root /disk1/job/os/result/iptables && chmod 755 /disk1/job/os/result/iptables  # [101行目] iptables監査ログ格納ディレクトリ
+mkdir -p /disk1/job/os/result/oracle && chown root:root /disk1/job/os/result/oracle && chmod 755 /disk1/job/os/result/oracle  # [102行目] oracle監査ログ格納ディレクトリ
+mkdir -p /disk1/job/os/result/ssh && chown root:root /disk1/job/os/result/ssh && chmod 755 /disk1/job/os/result/ssh  # [103行目] ssh監査ログ格納ディレクトリ
+mkdir -p /disk1/job/os/result/weblogic_01 && chown root:root /disk1/job/os/result/weblogic_01 && chmod 755 /disk1/job/os/result/weblogic_01  # [104行目] weblogic_01監査ログ格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/os/result/weblogic_02 && chown root:root /disk1/job/os/result/weblogic_02 && chmod 755 /disk1/job/os/result/weblogic_02  # [105行目] weblogic_02監査ログ格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/os/tmp && chown root:root /disk1/job/os/tmp && chmod 777 /disk1/job/os/tmp  # [106行目] (監査ログ取得処理用)一時ファイル格納ディレクトリ
+mkdir -p /disk1/job/os/conf && chown root:root /disk1/job/os/conf && chmod 777 /disk1/job/os/conf  # [107行目] (監査ログ取得処理用)対象ファイルリスト格納ディレクトリ
+mkdir -p /disk1/job/os/log && chown root:root /disk1/job/os/log && chmod 777 /disk1/job/os/log  # [108行目] (監査ログ取得処理用)ログファイル格納ディレクトリ
+mkdir -p /disk1/job/comn && chown cpbackup:cpbackup /disk1/job/comn && chmod 755 /disk1/job/comn  # [109行目] 共通PFバックアッププログラム格納ディレクトリ
+mkdir -p /disk1/job/comn/backup && chown cpbackup:cpbackup /disk1/job/comn/backup && chmod 755 /disk1/job/comn/backup  # [110行目] 共通PFバックアップ/ミラーリング処理用ディレクトリ
+mkdir -p /disk1/job/comn/backup/scripts && chown cpbackup:cpbackup /disk1/job/comn/backup/scripts && chmod 777 /disk1/job/comn/backup/scripts  # [111行目] メインプログラム格納ディレクトリ
+mkdir -p /disk1/job/comn/backup/sub && chown cpbackup:cpbackup /disk1/job/comn/backup/sub && chmod 777 /disk1/job/comn/backup/sub  # [112行目] サブプログラム格納ディレクトリ
+mkdir -p /disk1/job/comn/backup/sql && chown cpbackup:cpbackup /disk1/job/comn/backup/sql && chmod 777 /disk1/job/comn/backup/sql  # [113行目] SQLプログラム格納ディレクトリ
+mkdir -p /disk1/job/comn/backup/out && chown cpbackup:cpbackup /disk1/job/comn/backup/out && chmod 777 /disk1/job/comn/backup/out  # [114行目] アウトプットファイル格納ディレクトリ
+mkdir -p /disk1/job/comn/backup/tmp && chown cpbackup:cpbackup /disk1/job/comn/backup/tmp && chmod 777 /disk1/job/comn/backup/tmp  # [115行目] 一時ファイル格納ディレクトリ
+mkdir -p /disk1/job/comn/backup/log && chown cpbackup:cpbackup /disk1/job/comn/backup/log && chmod 777 /disk1/job/comn/backup/log  # [116行目] ログファイル格納ディレクトリ
+mkdir -p /disk1/job/weblogic && chown root:root /disk1/job/weblogic && chmod 755 /disk1/job/weblogic  # [117行目] Weblogic起動・停止処理用ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/weblogic/scripts && chown root:root /disk1/job/weblogic/scripts && chmod 777 /disk1/job/weblogic/scripts  # [118行目] メインプログラム格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/weblogic/sub && chown root:root /disk1/job/weblogic/sub && chmod 777 /disk1/job/weblogic/sub  # [119行目] サブプログラム格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/weblogic/sql && chown root:root /disk1/job/weblogic/sql && chmod 777 /disk1/job/weblogic/sql  # [120行目] SQLプログラム格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/weblogic/out && chown root:root /disk1/job/weblogic/out && chmod 777 /disk1/job/weblogic/out  # [121行目] アウトプットファイル格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/weblogic/tmp && chown root:root /disk1/job/weblogic/tmp && chmod 777 /disk1/job/weblogic/tmp  # [122行目] 一時ファイル格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/weblogic/log && chown root:root /disk1/job/weblogic/log && chmod 777 /disk1/job/weblogic/log  # [123行目] ログファイル格納ディレクトリ WebLogic 専用【要確認】
+mkdir -p /disk1/job/apache && chown root:root /disk1/job/apache && chmod 755 /disk1/job/apache  # [124行目] Apache起動・停止処理用ディレクトリ
+mkdir -p /disk1/job/apache/scripts && chown root:root /disk1/job/apache/scripts && chmod 777 /disk1/job/apache/scripts  # [125行目] メインプログラム格納ディレクトリ
+mkdir -p /disk1/job/apache/sub && chown root:root /disk1/job/apache/sub && chmod 777 /disk1/job/apache/sub  # [126行目] サブプログラム格納ディレクトリ
+mkdir -p /disk1/job/apache/sql && chown root:root /disk1/job/apache/sql && chmod 777 /disk1/job/apache/sql  # [127行目] SQLプログラム格納ディレクトリ
+mkdir -p /disk1/job/apache/out && chown root:root /disk1/job/apache/out && chmod 777 /disk1/job/apache/out  # [128行目] アウトプットファイル格納ディレクトリ
+mkdir -p /disk1/job/apache/tmp && chown root:root /disk1/job/apache/tmp && chmod 777 /disk1/job/apache/tmp  # [129行目] 一時ファイル格納ディレクトリ
+mkdir -p /disk1/job/apache/log && chown root:root /disk1/job/apache/log && chmod 777 /disk1/job/apache/log  # [130行目] ログファイル格納ディレクトリ
+# ---- /disk2 ----
+ls -ld /disk2                                                       # [131行目] マウントポイント root:root 755（既存。変更しない）
+# ---- /disk2/purge ----
+mkdir -p /disk2/purge && chown root:root /disk2/purge && chmod 777 /disk2/purge  # [132行目] ファイルパージ処理退避圧縮ファイル格納ディレクトリ (※[統合顧客DB-機能設計書(ファイルパージ処理)]を参照)
+# ---- /opt ----
+ls -ld /opt                                                         # [133行目] OS 標準（既存。root:root 755 であること。変更しない）
+# ---- /opt/oracle ----
+mkdir -p /opt/oracle && chown weblogic:oinstall /opt/oracle && chmod 755 /opt/oracle  # [134行目] WebLogic 専用【要確認】
+mkdir -p /opt/oracle/middleware && chown weblogic:oinstall /opt/oracle/middleware && chmod 750 /opt/oracle/middleware  # [135行目] WebLogic 専用【要確認】
+mkdir -p /opt/oracle/middleware/wlserver_10.3 && chown weblogic:oinstall /opt/oracle/middleware/wlserver_10.3 && chmod 755 /opt/oracle/middleware/wlserver_10.3  # [136行目] WebLogic 専用【要確認】
+# ---- /home ----
+ls -ld /home                                                        # [137行目] OS 標準（既存。root:root 755 であること。変更しない）
+# ---- /home/weblogic ----
+ls -ld /home/weblogic                                               # [138行目] useradd -m で作成済み（既存。weblogic:oinstall 700 であること。変更しない）
+mkdir -p /home/weblogic/add_on && chown weblogic:oinstall /home/weblogic/add_on && chmod 755 /home/weblogic/add_on  # [139行目] リリース作業用
+# ---- /work ----
+mkdir -p /work && chown root:root /work && chmod 755 /work  # [140行目]
+# ---- /work/OS ----
+mkdir -p /work/OS && chown root:root /work/OS && chmod 777 /work/OS  # [141行目]
+mkdir -p /work/OS/iptables && chown root:root /work/OS/iptables && chmod 777 /work/OS/iptables  # [142行目] iptables設定作業用ディレクトリ
+# ---- /usr ----
+ls -ld /usr                                                         # [143行目] OS 標準（既存。root:root 755 であること。変更しない）
+# ---- /usr/local ----
+ls -ld /usr/local                                                   # [144行目] OS 標準（既存。root:root 755 であること。変更しない）
+ls -ld /usr/local/bin                                               # [145行目] OS 標準（既存。root:root 755 であること。変更しない）
+ls -ld /usr/local/lib                                               # [146行目] OS 標準（既存。root:root 755 であること。変更しない）
+mkdir -p /usr/local/lib/aws && chown root:root /usr/local/lib/aws && chmod 755 /usr/local/lib/aws  # [147行目] aws cliパッケージインストール先
+mkdir -p /usr/local/lib/aws/bin && chown root:root /usr/local/lib/aws/bin && chmod 755 /usr/local/lib/aws/bin  # [148行目]
+mkdir -p /usr/local/lib/aws/include && chown root:root /usr/local/lib/aws/include && chmod 755 /usr/local/lib/aws/include  # [149行目]
+mkdir -p /usr/local/lib/aws/lib && chown root:root /usr/local/lib/aws/lib && chmod 755 /usr/local/lib/aws/lib  # [150行目]
+
+### 2. 事後確認 ----------------------------------------------------------
+find /disk1 /disk2 -type d -printf '%m %u %g %p\n' | sort -k4      # 127 行。権限/所有者/グループが定義どおりであること
+find /opt/oracle /home/weblogic /work /usr/local/lib/aws -type d -printf '%m %u %g %p\n' | sort -k4   # 残り 18 行分
+find /disk1 /disk2 -type d | wc -l                                 # 127
+ls -ld /disk1/weblogic /disk1/hyojun /disk1/job /disk1/httpd/logs /disk2/purge /opt/oracle/middleware/wlserver_10.3
+
+### 3. SELinux が有効な場合のみ（備考）----------------------------------------
+semanage fcontext -a -t httpd_log_t "/disk1/httpd/logs(/.*)?"       # httpd がログを書く場合【要確認】
+restorecon -Rv /disk1 /disk2 /opt/oracle /work                         # コンテキスト付与
+ls -Zd /disk1/httpd/logs /disk1/weblogic

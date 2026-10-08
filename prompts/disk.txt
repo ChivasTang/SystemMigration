@@ -1,0 +1,26 @@
+7	EDR	〇	〇	CrowdStrike Falcon Sensorの導入手順	〇	－
+8	Tanium	〇	〇	Tanium Clientの導入手順	〇	－
+10	Java	〇	〇	Java（Amazon Corretto 8）の導入手順	〇	－
+20	Asteria	〇	〇	ASTERIA Warp 2406の導入手順（本書の対象に含めるか要確認）	〇	－
+21	Tomcat	〇	〇	Tomcat 9.0.122の導入と全インスタンス共通の設定手順	〇	－
+28	HULFT	〇	〇	QA環境からインストールする。HULFT（ファイル転送ツール）の導入・設定手順	〇	－
+上記記載のRHEL8.10用のインストールパッケージのCURLダウンロードURLを調査し、教えてください。
+そのうち、
+Javaは、Amazon Corretto 8の最新版のURLを教えてください。
+Tomcat は、9.0.122のダウンロードURLを教えてください。
+checksumの確認方法も教えてください。
+
+
+cd /tmp/ && curl -OL https://corretto.aws/downloads/latest_sha256/amazon-corretto-8-x64-linux-jdk.rpm
+
+
+
+
+curl -L -o /temp/amazon-corretto-8-x64-linux-jdk.rpm https://corretto.aws/downloads/latest/amazon-corretto-8-x64-linux-jdk.rpm
+
+
+curl -L -o /temp/amazon-corretto-8-x64-linux-jdk.rpm.sha256 https://corretto.aws/downloads/latest_sha256/amazon-corretto-8-x64-linux-jdk.rpm
+
+curl -L -o /temp/apache-tomcat-9.0.122.tar.gz https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.122/bin/apache-tomcat-9.0.122.tar.gz
+
+curl -L -o /temp/apache-tomcat-9.0.122.tar.gz.sha512 https://downloads.apache.org/tomcat/tomcat-9/v9.0.122/bin/apache-tomcat-9.0.122.tar.gz.sha512

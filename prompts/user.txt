@@ -1,0 +1,90 @@
+### 0. 事前確認 ----------------------------------------------------------
+whoami                                    # root であること
+cat /etc/redhat-release                   # Red Hat Enterprise Linux release 8.10 (Ootpa)
+grep -E '^(UID_MIN|UID_MAX|GID_MIN|GID_MAX|SYS_UID_MIN|SYS_UID_MAX|SYS_GID_MIN|SYS_GID_MAX|UMASK)' /etc/login.defs
+cp -p /etc/passwd /etc/passwd.$(date +%Y%m%d)
+cp -p /etc/group  /etc/group.$(date +%Y%m%d)
+cp -p /etc/shadow /etc/shadow.$(date +%Y%m%d)
+
+### 1. グループ：存在確認（何も表示されなければ未使用） ------------------
+getent group cpbackup oinstall pfusr ftpuser OP     # 名前が出たら → そのグループは作らない（出た GID を使う）
+getent group 501 600 2200 2500 2510                 # 番号が出たら → その GID は他で使用中 → 次の空き番号を探す
+
+getent group 502                                    # 例：501 が使用済みのとき。表示されなければ 502 を使う（503, 504… と順に）
+getent group 601
+getent group 2201
+getent group 2501
+getent group 2511
+
+### 1'. グループ作成（上で「名前も番号も表示されなかった」ものだけ） ------
+groupadd -g 501  cpbackup                 # 参考値が使用済みなら -g を空き番号に変え、変更前後と理由を記録
+groupadd -g 600  oinstall                 # weblogic(tomcat)・cm_usr 共有。1 回だけ作成
+groupadd -g 2200 pfusr
+groupadd -g 2500 ftpuser
+groupadd -g 2510 OP
+getent group cpbackup oinstall pfusr ftpuser OP     # 5 行表示されること
+
+### 2. ログインシェル（ksh） --------------------------------------------
+rpm -q ksh                                # 「package ksh is not installed」なら次の行を実行
+dnf install -y ksh                        # 未導入のときだけ
+ls -l /bin/bash /bin/ksh                  # 両方存在すること
+grep -E '^/(usr/)?bin/(bash|ksh)$' /etc/shells      # /bin/ksh（または /usr/bin/ksh）が登録されていること
+
+### 3. ユーザ：存在確認 -------------------------------------------------
+id cpbackup
+id tomcat
+id cm_usr
+id pfusr
+id ftpunyo
+id opuser
+getent passwd cpbackup weblogic cm_usr pfusr ftpunyo opuser   # 既存ユーザの passwd 行（UID/GID/ホーム/シェル）を定義と比べて記録
+getent passwd 501 700 2100 2200 2500 2510                     # 番号が出たら → その UID は他で使用中 → 次の空き番号を探す
+getent passwd 502                                             # 例：501 が使用済みのとき（表示されなければ 502 を使う）
+getent passwd 701
+getent passwd 2101
+getent passwd 2201
+getent passwd 2501
+getent passwd 2511
+
+### 3'. ユーザ作成（id で「no such user」だったものだけ） -------------------
+useradd -u 501  -g cpbackup -d /home/cpbackup -m -s /bin/bash cpbackup
+useradd -u 700  -g oinstall -d /home/tomcat   -m -s /bin/bash tomcat
+useradd -u 2100 -g oinstall -d /home/cm_usr   -m -s /bin/ksh  cm_usr
+useradd -u 2200 -g pfusr    -d /home/pfusr    -m -s /bin/bash pfusr
+useradd -u 2500 -g ftpuser  -d /home/ftpunyo  -m -s /bin/bash ftpunyo
+useradd -u 2510 -g OP       -d /home/opuser   -m -s /bin/bash opuser
+# ※ UID が使用済みだった場合は -u を空き番号に変える。「useradd warning: ... outside of the UID_MIN ... range」は警告のみ（作成される）
+
+### 4. 作成後確認 -------------------------------------------------------
+getent passwd cpbackup weblogic cm_usr pfusr ftpunyo opuser   # 6 行。UID/GID/ホーム/シェルが定義どおり
+ls -ld /home/cpbackup /home/weblogic /home/cm_usr /home/pfusr /home/ftpunyo /home/opuser   # drwx------ 所有者=ユーザ グループ=主グループ
+ls -A /etc/skel                                               # 配布ファイル一覧（RHEL 8：.bash_logout .bash_profile .bashrc）
+passwd -S cpbackup                                            # 「LK」= パスワード未設定（ロック）。これが期待値
+
+su - cpbackup -c 'id; echo $SHELL; pwd'
+cat /home/cpbackup/.bash_profile /home/cpbackup/.bashrc
+ls -la /home/cpbackup
+
+su - tomcat -c 'id; echo $SHELL; pwd'
+cat /home/tomcat/.bash_profile /home/tomcat/.bashrc
+ls -la /home/tomcat
+
+su - cm_usr -c 'id; echo $SHELL; pwd'
+su - cm_usr -c 'echo ${.sh.version}'
+cat /home/cm_usr/.bash_profile /home/cm_usr/.bashrc
+ls -la /home/cm_usr
+
+su - pfusr -c 'id; echo $SHELL; pwd'
+cat /home/pfusr/.bash_profile /home/pfusr/.bashrc
+ls -la /home/pfusr
+
+su - ftpunyo -c 'id; echo $SHELL; pwd'
+cat /home/ftpunyo/.bash_profile /home/ftpunyo/.bashrc
+ls -la /home/ftpunyo
+
+su - opuser -c 'id; echo $SHELL; pwd'
+cat /home/opuser/.bash_profile /home/opuser/.bashrc
+ls -la /home/opuser
+
+### 5.（必要な場合のみ）パスワード設定 --------------------------------------
+passwd cpbackup                           # <パスワード> を入力。他ユーザも同様。設定しない場合は実行しない
